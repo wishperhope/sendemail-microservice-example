@@ -16,9 +16,16 @@ func (s *Server) process(messages <-chan *message.Message) {
 			log.Println(err)
 		}
 
-		log.Printf("received message: %s, email: %s result: %s", msg.UUID, string(msg.Payload), result)
+		log.Printf("received message: %s, result: %s", msg.UUID, result)
 
 		msg.Ack()
+
+		query := "UPDATE send_email SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+
+		_, err = s.db.Exec(query, result, msg.UUID)
+		if err != nil {
+			log.Println("Cannot Update Status of Email")
+		}
 
 	}
 }

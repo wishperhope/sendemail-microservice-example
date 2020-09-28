@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     depends_on:
       - nats-streaming
+      - mariadb
   sendemail-producer:
     build: Producer/.
     restart: unless-stopped
@@ -18,3 +19,18 @@ services:
       - "5080:8080"
     depends_on:
       - nats-streaming
+      - mariadb
+  mariadb:
+    image: mariadb:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "example_db"
+      MYSQL_USER: "example_user"
+      MYSQL_PASSWORD: "example_password"
+      MYSQL_ROOT_PASSWORD: "example_root_password"
+    ports:
+      - "4306:3306"
+    volumes:
+      - sendemail-db:/var/lib/mysql
+volumes:
+  sendemail-db:

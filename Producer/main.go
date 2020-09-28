@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,7 @@ import (
 // Producer recive api call and send the payload to nats-streaming
 // See : https://medium.com/@matryer/how-i-write-go-http-services-after-seven-years-37c208122831
 type Server struct {
+	db             *sql.DB
 	emailPublisher *nats.StreamingPublisher
 	router         *mux.Router
 	token          string

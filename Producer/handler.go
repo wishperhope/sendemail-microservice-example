@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -36,22 +37,44 @@ func (s *Server) handler() http.HandlerFunc {
 			log.Fatal("Wrong Parameter Request", err)
 		}
 
-		res, err := json.Marshal(&job)
+		jobJSON, err := json.Marshal(&job)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		uuid := watermill.NewUUID()
+
+		_, err = s.db.Exec("INSERT INTO send_email (id, `to`, `from`, subject, status) VALUES  (?, ?, ?, ?, ?)", uuid, job.To, job.From, job.Subject, "waiting")
+		if err != nil {
+			log.Fatal("Cannot Insert New Record", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		result := Job{
+			ID:        uuid,
+			To:        job.To,
+			From:      job.From,
+			Status:    "waiting",
+			Subject:   job.Subject,
+			CreatedAt: time.Now(),
+		}
+
 		// send to nats
-		msg := message.NewMessage(watermill.NewUUID(), res)
+		msg := message.NewMessage(uuid, jobJSON)
 		if err = s.emailPublisher.Publish("sendEmail.topic", msg); err != nil {
 			log.Fatal("Cannot Send Content To Nats Server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		log.Println("Sending Message : ", string(res))
+
+		res, err := json.Marshal(&result)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
-		// Return fixed response change this if nescessary
-		_, err = w.Write([]byte("\"{success:true}\""))
+		_, err = w.Write(res)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

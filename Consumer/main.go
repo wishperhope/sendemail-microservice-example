@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 
 	"github.com/ThreeDotsLabs/watermill-nats/pkg/nats"
@@ -10,6 +11,7 @@ import (
 
 // Server Struct hold nats connection
 type Server struct {
+	db              *sql.DB
 	emailSubscriber *nats.StreamingSubscriber
 }
 
