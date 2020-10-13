@@ -45,7 +45,7 @@ func (s *Server) handler() http.HandlerFunc {
 
 		uuid := watermill.NewUUID()
 
-		_, err = s.db.Exec("INSERT INTO send_email (id, `to`, `from`, subject, status) VALUES  (?, ?, ?, ?, ?)", uuid, job.To, job.From, job.Subject, "waiting")
+		_, err = s.db.Exec("INSERT INTO send_email (id, `to`, `from`, subject, status, note) VALUES  (?, ?, ?, ?, ?, ?)", uuid, job.To, job.From, job.Subject, "waiting", job.Note)
 		if err != nil {
 			log.Fatal("Cannot Insert New Record", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -58,6 +58,7 @@ func (s *Server) handler() http.HandlerFunc {
 			Status:    "waiting",
 			Subject:   job.Subject,
 			CreatedAt: time.Now(),
+			Note:      job.Note,
 		}
 
 		// send to nats
